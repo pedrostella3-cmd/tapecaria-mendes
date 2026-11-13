@@ -13,7 +13,7 @@
   .js:not(.parado) .hero__brilho { animation: brilho 1.8s 2.2s var(--ease) both; }
 }
 .hero__texto { position: relative; z-index: 2; padding-top: calc(var(--faixa) + 120px); padding-bottom: 80px; }
-.hero__slogan { display: inline-flex; align-items: center; gap: 14px; margin-bottom: 22px; font: 700 21px/1.1 var(--display); letter-spacing: .02em; color: var(--ouro-claro); }
+.hero__slogan { display: inline-flex; align-items: center; gap: 14px; margin-bottom: 24px; font: 800 clamp(26px, 2.4vw, 34px)/1.1 var(--display); letter-spacing: .02em; color: var(--ouro); }
 .hero__slogan::before { content: ""; width: 44px; height: 3px; background: var(--costura); }
 .hero h1 { max-width: 9.5ch; font-size: clamp(60px, min(8.4vw, 14vh), 124px); line-height: .9; }
 .hero__lead { margin-top: 26px; max-width: 44ch; font-size: 18px; color: var(--texto); }
