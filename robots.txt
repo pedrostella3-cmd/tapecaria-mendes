@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://pedrostella3-cmd.github.io/tapecaria-mendes/sitemap.xml
