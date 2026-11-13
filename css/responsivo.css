@@ -42,7 +42,7 @@
   body { font-size: 16px; }
   .topbar__inner { height: 68px; }
   .brand__nome { font-size: 24px; }
-  .hero__title { font-size: clamp(54px, 16.5vw, 72px); }
+  .hero__title { font-size: clamp(50px, 15vw, 66px); }
   .costura { margin: 18px 0 16px; }
   .hero__actions { margin-top: 20px; }
   .hero__actions .btn { flex: 1 1 100%; }

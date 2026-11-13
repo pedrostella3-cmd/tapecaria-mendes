@@ -114,7 +114,7 @@ p { margin: 0 0 1em; }
 .hero__foto::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, var(--fundo) 0%, rgba(28, 25, 23, .78) 26%, rgba(28, 25, 23, 0) 62%), linear-gradient(0deg, rgba(28, 25, 23, .7) 0%, rgba(28, 25, 23, 0) 30%), linear-gradient(180deg, rgba(28, 25, 23, .8) 0%, rgba(28, 25, 23, 0) 24%); }
 .hero__content { position: relative; z-index: 1; align-self: end; padding-top: 136px; padding-bottom: 36px; }
 .hero__local { margin: 0 0 18px; font-size: 15.5px; font-weight: 500; color: var(--fio); }
-.hero__title { font-size: clamp(60px, min(8.6vw, 14.5vh), 132px); line-height: .9; max-width: 9.5ch; }
+.hero__title { font-size: clamp(56px, min(7.4vw, 12.5vh), 112px); line-height: .92; max-width: 10.5ch; }
 .costura { display: block; width: min(420px, 78%); height: 4px; margin: 26px 0 24px; color: var(--couro); background: var(--pesponto); }
 .hero__lead { max-width: 47ch; font-size: clamp(16px, 1.35vw, 19px); color: rgba(241, 233, 220, .9); margin: 0; }
 .hero__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
