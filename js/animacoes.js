@@ -1,5 +1,5 @@
-// Tapeçaria Mendes: poucas animações, com motivo. Rolagem suave (Lenis), a abertura que "costura" o título,
-// fotos que se revelam e a linha dos passos que se costura ao rolar (GSAP + ScrollTrigger).
+// Tapeçaria Mendes: poucas animações, com motivo. Rolagem suave (Lenis); na abertura a fachada acende (CSS) e o título
+// sobe palavra por palavra; fotos que se revelam ao chegar e números que contam (nota e avaliações reais do Google).
 // Sem as bibliotecas, com "reduzir movimento" ligado ou com ?parado na URL, nada se mexe e tudo aparece normal.
 (function () {
   const reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches || /[?&]parado/.test(location.search);
@@ -17,26 +17,34 @@
     gsap.ticker.lagSmoothing(0);
   }
 
-  /* ---------- Abertura: o título sobe palavra por palavra e a costura laranja é "passada" embaixo ---------- */
+  /* ---------- Abertura ---------- */
   const titulo = document.querySelector('.hero [data-split]');
   titulo.setAttribute('aria-label', titulo.textContent.trim());
   titulo.innerHTML = titulo.textContent.trim().split(/\s+/)
     .map((p) => '<span class="split-word" aria-hidden="true"><span>' + p + '</span></span>').join(' ');
-  gsap.timeline()
+  gsap.timeline({ delay: .4 })
     .from(titulo.querySelectorAll('.split-word > span'), { yPercent: 115, duration: 1, ease: 'expo.out', stagger: .07 })
-    .to('.hero .costura', { clipPath: 'inset(0 0% 0 0)', duration: 1.1, ease: 'power2.inOut' }, '-=.45')
-    .to('.hero [data-reveal]', { opacity: 1, y: 0, duration: .9, ease: 'expo.out', stagger: .1 }, '-=.8');
+    .to('.hero [data-reveal]', { opacity: 1, y: 0, duration: .9, ease: 'expo.out', stagger: .1 }, '-=.7');
 
-  /* ---------- Fotos que se revelam de baixo para cima ---------- */
+  /* ---------- Fotos que se revelam ---------- */
   document.querySelectorAll('[data-clip]').forEach((el) => {
     gsap.to(el, { clipPath: 'inset(0% 0 0 0)', duration: 1.2, ease: 'expo.inOut', scrollTrigger: { trigger: el, start: 'top 88%', once: true } });
   });
 
-  /* ---------- Passos: a linha que liga os números se costura conforme a rolagem ---------- */
-  const passos = document.querySelector('.passos');
-  if (passos) {
-    gsap.fromTo(passos, { '--costurado': 0 }, { '--costurado': 1, ease: 'none', scrollTrigger: { trigger: passos, start: 'top 75%', end: 'bottom 60%', scrub: true } });
-  }
+  /* ---------- Fotos da galeria entram em sequência ---------- */
+  ScrollTrigger.batch('.gallery__grid li', {
+    start: 'top 92%', once: true,
+    onEnter: (lote) => gsap.from(lote, { opacity: 0, y: 30, duration: .8, ease: 'expo.out', stagger: .06 }),
+  });
+
+  /* ---------- Números que contam ---------- */
+  const fmt = (v, d) => v.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+  document.querySelectorAll('[data-count]').forEach((el) => {
+    const alvo = Number(el.dataset.count), dec = Number(el.dataset.decimais || 0), obj = { v: 0 };
+    el.textContent = fmt(0, dec);
+    gsap.to(obj, { v: alvo, duration: 1.4, ease: 'power2.out', scrollTrigger: { trigger: el, start: 'top 90%', once: true },
+      onUpdate: () => { el.textContent = fmt(obj.v, dec); } });
+  });
 
   window.addEventListener('load', () => ScrollTrigger.refresh());
 })();

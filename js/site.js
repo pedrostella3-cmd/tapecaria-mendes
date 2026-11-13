@@ -1,11 +1,10 @@
-// Tapeçaria Mendes (a partir do modelo base Agiliza): menu, rolagem, topo, avaliações, galeria com filtro,
-// serviços (um aberto por vez), formulário do WhatsApp com prévia da mensagem e o fio que costura a página.
-// Funciona sozinho; as animações ficam em animacoes.js e o site continua legível se elas não carregarem.
+// Tapeçaria Mendes (base da Gênova Detail): menu, rolagem, topo, serviços que abrem (um por vez, com link próprio),
+// galeria com filtro e foto ampliada, e os links que abrem o WhatsApp com o texto pronto.
+// O simulador de orçamento fica em simulador.js; as animações em animacoes.js. Sem eles, o site continua legível.
 (function () {
   const WHATS = document.body.dataset.whatsapp;
   const reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches || /[?&]parado/.test(location.search);
-  const hoje = new Date();
-  document.querySelectorAll('[data-year]').forEach((el) => { el.textContent = hoje.getFullYear(); });
+  document.querySelectorAll('[data-year]').forEach((el) => { el.textContent = new Date().getFullYear(); });
 
   // Links de WhatsApp: o número fica só no data-whatsapp do <body>; data-wa é o texto inicial da conversa
   document.querySelectorAll('[data-wa]').forEach((a) => {
@@ -30,6 +29,31 @@
   });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && nav.classList.contains('is-open')) fecharMenu(); });
 
+  /* ---------- Serviços: tocar abre o painel embaixo do grupo (um aberto por vez) ---------- */
+  const chips = [...document.querySelectorAll('[data-abre]')];
+  function mostrarServico(id) {   // id vazio fecha todos
+    document.querySelectorAll('.servico').forEach((p) => {
+      p.hidden = p.id !== id;
+      const v = p.querySelector('video');
+      if (v) { if (!p.hidden && !reduz) v.play().catch(() => {}); else v.pause(); }
+    });
+    chips.forEach((c) => c.setAttribute('aria-expanded', String(c.dataset.abre === id)));
+    if (window.ScrollTrigger) window.ScrollTrigger.refresh();
+  }
+  window.mostrarServico = mostrarServico; // usado pela cena do vídeo
+  chips.forEach((c) => c.addEventListener('click', () => {
+    const aberto = c.getAttribute('aria-expanded') === 'true';
+    mostrarServico(aberto ? '' : c.dataset.abre);
+    if (!aberto) history.replaceState(null, '', '#' + c.dataset.abre);   // link certo na barra, para mandar ao cliente
+  }));
+  // Quem chega por um link de serviço (…/#volante) já vê o serviço aberto
+  function abrirPeloLink() {
+    const p = location.hash.length > 1 && document.getElementById(location.hash.slice(1));
+    if (p && p.matches('.servico')) { mostrarServico(p.id); p.closest('.grupo').scrollIntoView(); }
+  }
+  window.addEventListener('hashchange', abrirPeloLink);
+  abrirPeloLink();
+
   /* ---------- Links internos (a rolagem suave do Lenis entra em animacoes.js) ---------- */
   document.querySelectorAll('a[href^="#"]').forEach((a) => {
     a.addEventListener('click', (e) => {
@@ -37,8 +61,9 @@
       const alvo = id.length > 1 && document.querySelector(id);
       if (!alvo) return;
       e.preventDefault();
+      if (alvo.matches('.servico')) { mostrarServico(alvo.id); history.replaceState(null, '', id); }
       if (nav.classList.contains('is-open')) fecharMenu();
-      if (window.lenis) window.lenis.scrollTo(alvo, { offset: id === '#inicio' ? 0 : -60, duration: 1.4 });
+      if (window.lenis) window.lenis.scrollTo(alvo, { offset: id === '#inicio' ? 0 : -70, duration: 1.3 });
       else alvo.scrollIntoView({ behavior: reduz ? 'auto' : 'smooth' });
     });
   });
@@ -67,40 +92,16 @@
     links.forEach((l) => { const s = document.querySelector(l.getAttribute('href')); if (s) io.observe(s); });
   }
 
-  /* ---------- Fotos da abertura em sequência ---------- */
-  const slides = [...document.querySelectorAll('.hero__slide')];
-  if (slides.length > 1 && !reduz) {
-    let atual = 0;
-    setInterval(() => {
-      if (document.hidden) return;
-      slides[atual].classList.remove('is-active');
-      atual = (atual + 1) % slides.length;
-      slides[atual].classList.add('is-active');
-    }, 6500);
-  }
+  /* ---------- Trabalhos: filtro por tipo ---------- */
+  const filtros = [...document.querySelectorAll('[data-filtro]')];
+  const fotos = [...document.querySelectorAll('.gallery__grid li')];
+  filtros.forEach((f) => f.addEventListener('click', () => {
+    filtros.forEach((o) => o.setAttribute('aria-pressed', String(o === f)));
+    fotos.forEach((li) => { li.hidden = f.dataset.filtro !== 'todos' && li.dataset.tipo !== f.dataset.filtro; });
+    if (window.ScrollTrigger) window.ScrollTrigger.refresh();
+  }));
 
-  /* ---------- Depoimentos ---------- */
-  const reviews = [...document.querySelectorAll('.review')];
-  const dots = [...document.querySelectorAll('.reviews__dots button')];
-  let rAtual = 0;
-  let rTimer;
-  function mostrarReview(i) {
-    reviews[rAtual].classList.remove('is-active');
-    dots[rAtual].setAttribute('aria-selected', 'false');
-    rAtual = i;
-    reviews[rAtual].classList.add('is-active');
-    dots[rAtual].setAttribute('aria-selected', 'true');
-  }
-  function rodarReviews() {
-    clearInterval(rTimer);
-    if (!reduz && reviews.length > 1) rTimer = setInterval(() => mostrarReview((rAtual + 1) % reviews.length), 7000);
-  }
-  if (reviews.length && dots.length === reviews.length) {
-    dots.forEach((d, i) => d.addEventListener('click', () => { mostrarReview(i); rodarReviews(); }));
-    rodarReviews();
-  }
-
-  /* ---------- Galeria ampliada ---------- */
+  /* ---------- Foto ampliada (galeria e catálogo) ---------- */
   const dialog = document.querySelector('[data-lightbox-dialog]');
   if (dialog && typeof dialog.showModal === 'function') {
     const img = dialog.querySelector('img');
@@ -108,7 +109,7 @@
       b.addEventListener('click', () => {
         const mini = b.querySelector('img');
         img.src = b.dataset.lightbox;
-        img.alt = mini ? mini.alt : '';
+        img.alt = b.dataset.alt || (mini ? mini.alt : '');
         dialog.showModal();
         if (window.lenis) window.lenis.stop();
       });
@@ -116,90 +117,5 @@
     dialog.querySelector('.lightbox__close').addEventListener('click', () => dialog.close());
     dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
     dialog.addEventListener('close', () => { if (window.lenis) window.lenis.start(); });
-  }
-
-  /* ---------- Formulário → mensagem pronta no WhatsApp ---------- */
-  // Cada campo com name entra na mensagem como "Rótulo: valor", na ordem do formulário.
-  // A primeira linha vem de data-mensagem no <form>. Nada é enviado pelo site: só abre o WhatsApp.
-  const form = document.querySelector('[data-booking]');
-  const aviso = document.querySelector('[data-booking-warn]');
-  const dataBR = (v) => v.split('-').reverse().join('/');
-  const limpar = (v) => String(v || '').replace(/\s+/g, ' ').trim().slice(0, 300);
-
-  function montarMensagem() {
-    const linhas = [form.dataset.mensagem];
-    const vistos = new Set();
-    [...form.elements].forEach((campo) => {
-      if (!campo.name || vistos.has(campo.name) || campo.type === 'submit') return;
-      vistos.add(campo.name);
-      let valor = campo.type === 'radio' ? (form.querySelector(`[name="${campo.name}"]:checked`) || {}).value : campo.value;
-      valor = limpar(valor);
-      if (!valor) return;
-      if (campo.type === 'date') valor = dataBR(valor);
-      const rotulo = campo.dataset.rotulo || (campo.closest('.field')?.querySelector('span, legend')?.textContent ?? campo.name);
-      linhas.push(limpar(rotulo) + ': ' + valor);
-    });
-    return linhas.join('\n');
-  }
-
-  if (form) {
-    window.montarMensagem = montarMensagem; // usado pela cena da propaganda
-    const hojeISO = new Date(hoje.getTime() - hoje.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-    const datas = [...form.querySelectorAll('input[type="date"]')];
-    datas.forEach((d) => { d.min = hojeISO; });
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      aviso.hidden = true;
-      // Com duas datas (chegada e saída), a segunda precisa ser depois da primeira
-      if (datas.length === 2 && datas[0].value && datas[1].value && datas[1].value <= datas[0].value) {
-        aviso.textContent = 'A segunda data precisa ser depois da primeira.';
-        aviso.hidden = false;
-        return;
-      }
-      window.open('https://wa.me/' + WHATS + '?text=' + encodeURIComponent(montarMensagem()), '_blank', 'noopener');
-    });
-  }
-
-  /* ---------- Prévia: mostra a mensagem do jeito que ela chega no WhatsApp ---------- */
-  const previa = document.querySelector('[data-previa]');
-  function atualizarPrevia() { if (form && previa) previa.textContent = montarMensagem(); }
-  if (form) { form.addEventListener('input', atualizarPrevia); form.addEventListener('change', atualizarPrevia); }
-  atualizarPrevia();
-
-  /* ---------- Serviços: só um aberto por vez; o botão leva o serviço escolhido para o formulário ---------- */
-  const servicos = [...document.querySelectorAll('.servico')];
-  servicos.forEach((s) => {
-    s.addEventListener('toggle', () => { if (s.open) servicos.forEach((o) => { if (o !== s) o.open = false; }); });
-    // No computador sempre fica um aberto (o painel ao lado não pode ficar vazio)
-    s.querySelector('summary').addEventListener('click', (e) => { if (s.open && window.innerWidth > 860) e.preventDefault(); });
-  });
-  document.querySelectorAll('[data-servico]').forEach((b) => {
-    b.addEventListener('click', () => {
-      if (!form) return;
-      form.elements.servico.value = b.dataset.servico;
-      atualizarPrevia();
-    });
-  });
-
-  /* ---------- Trabalhos: filtro por tipo ---------- */
-  const filtros = [...document.querySelectorAll('[data-filtro]')];
-  const fotos = [...document.querySelectorAll('.gallery__grid li')];
-  filtros.forEach((f) => {
-    f.addEventListener('click', () => {
-      filtros.forEach((o) => o.setAttribute('aria-pressed', String(o === f)));
-      fotos.forEach((li) => { li.hidden = f.dataset.filtro !== 'todos' && li.dataset.tipo !== f.dataset.filtro; });
-      if (window.ScrollTrigger) window.ScrollTrigger.refresh();
-    });
-  });
-
-  /* ---------- Fio que costura a borda da página conforme a rolagem ---------- */
-  const fio = document.querySelector('.fio');
-  if (fio) {
-    const medirFio = () => {
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      fio.style.setProperty('--p', max > 0 ? Math.min(1, window.scrollY / max).toFixed(4) : '0');
-    };
-    window.addEventListener('scroll', medirFio, { passive: true });
-    medirFio();
   }
 })();
